@@ -1,6 +1,6 @@
 const { MongoClient } = require('mongodb');
 const CONFIG = require('../../../config');
-const { getChinaTime, getAWeekAgo, getDate } = require('../../../utils/DateUtil');
+const { getChinaTime, getWeekAgo, getDate } = require('../../../utils/DateUtil');
 
 const DB_NAME = 'todo';
 const COLLECTION_NAME = 'daily';
@@ -64,7 +64,7 @@ const getWeekDaily = async () => {
   try {
     ret = await collection.find({
       "date": {
-        $gte: getAWeekAgo(),
+        $gte: getWeekAgo(),
         $lt: getChinaTime()
       }
     }).toArray();
@@ -151,7 +151,7 @@ const getWeekSum = async () => {
       {
         $match: {
           "date": {
-            $gte: getAWeekAgo(),
+            $gte: getWeekAgo(),
             $lt: getChinaTime()
           }
         }
@@ -176,9 +176,11 @@ module.exports = {
   getAllDaily,
   getLastDaily,
   addDaily,
+  getDailyByDate,
+  getWeekDaily
 }
 
 const main = async () => {
-  console.log(await getWeekSum())
+  console.log(await getWeekDaily())
 }
 main();
