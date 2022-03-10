@@ -11,7 +11,7 @@ module.exports = opts => {
       await addDaily();
       ws.send('send_private_msg',{
         user_id: data.sender.user_id,
-        message: '打卡成功\n' + await getWeekDaily()s
+        message: '打卡成功\n' + await getWeekDaily()
       })
     }
   }
