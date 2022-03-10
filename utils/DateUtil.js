@@ -21,7 +21,7 @@ const getDateStr = (date)=>{
 
 module.exports = {
   getChinaTime,
-  getAWeekAgo: getWeekAgo,
+  getWeekAgo,
   getDateStr,
   getDate
 }
