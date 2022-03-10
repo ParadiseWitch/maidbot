@@ -12,5 +12,10 @@ module.exports = {
     sendPlugins:{
       // 定时任务 注册一次
     },
+  },
+  db: {
+    mongo: {
+      url: "mongodb://localhost:27017"
+    }
   }
 }
