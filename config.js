@@ -4,12 +4,13 @@ module.exports = {
     ws: 'ws://127.0.0.1:6700'
   },
   plugins: {
-    replyPlugins:{
+    rPlugins:{
+      './plugin/daily': {},
       // 打卡
       // todo ？
       // 
     },
-    sendPlugins:{
+    sPlugins:{
       // 定时任务 注册一次
     },
   },
