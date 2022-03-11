@@ -4,76 +4,59 @@ const { getChinaTime, getWeekAgo, getDate } = require('../../../utils/DateUtil')
 
 const DB_NAME = 'todo';
 const COLLECTION_NAME = 'daily';
+let client;
+let db;
+let client;
 
 const getDbConfig = async () => {
-  let client;
   try {
-    client = new MongoClient(CONFIG.db.mongo.url)
-    await client.connect();
-    const db = client.db(DB_NAME);
-    const collection = db.collection(COLLECTION_NAME);
-    return { client, db, collection };
+    if (!client || !db || !collection) {
+      client = new MongoClient(CONFIG.db.mongo.url)
+      await client.connect();
+      db = client.db(DB_NAME);
+      collection = db.collection(COLLECTION_NAME);
+    }
   } catch (error) {
     console.error(error);
-    client.close();
+    client && client.close()
   }
 }
 
-const getAllDaily = async () => {
-  const { client, db, collection } = await getDbConfig();
-  let ret;
+const exec = async (fn, ...arg) => {
   try {
-    ret = await collection.find({}).toArray();
+    return await fn(...arg);
   } catch (error) {
-    console.error(error)
+    console.error(error);
   } finally {
-    await client.close();
+    client && client.close()
   }
-  return ret;
+}
+
+
+const getAllDaily = async () => {
+  const { collection } = await getDbConfig();
+  return await exec(async () => await collection.find({}).toArray());
 }
 
 const getDailyByDate = async (date) => {
   const { client, db, collection } = await getDbConfig();
-  let ret;
-  try {
-    ret = await collection.find({ date }).toArray();
-  } catch (error) {
-    console.error(error);
-  } finally {
-    await client.close();
-  }
-  return ret;
+  return await exec(async () => await collection.find({ date }).toArray())
 }
 
 const getLastDaily = async () => {
   const { client, db, collection } = await getDbConfig();
-  let ret;
-  try {
-    ret = await collection.find({}).sort({ $natural: -1 }).limit(1).toArray();
-  } catch (error) {
-    console.error(error)
-  } finally {
-    await client.close();
-  }
-  return ret;
+  return await exec(async () => collection.find({}).sort({ $natural: -1 }).limit(1).toArray());
 }
 
 const getWeekDaily = async () => {
   const { client, db, collection } = await getDbConfig();
-  let ret;
-  try {
-    ret = await collection.find({
-      "date": {
-        $gte: getWeekAgo(),
-        $lt: getChinaTime()
-      }
-    }).toArray();
-  } catch (error) {
-    console.error(error);
-  } finally {
-    await client.close();
-  }
-  return ret;
+  return await exec(async () => await collection.find({
+    "date": {
+      $gte: getWeekAgo(),
+      $lt: getChinaTime()
+    }
+  }).toArray())
+
 }
 
 /**
@@ -89,20 +72,12 @@ const addDaily = async (date = getDate(), money = 10) => {
   const len = data.length;
   if (len <= 0) {
     // 没有打卡, 插入数据
-    let ret;
-    try {
-      ret = await collection.insertOne({
-        date: date,
-        money: money,
-        user: 'xj',
-        name: 'daily'
-      });
-    } catch (e) {
-      console.error(e)
-    } finally {
-      await client.close();
-    }
-    return ret;
+    return exec(async () => await collection.insertOne({
+      date: date,
+      money: money,
+      user: 'xj',
+      name: 'daily'
+    }));
   } else {
     // 该日期已有打卡，更新
     await client.close();
@@ -112,63 +87,39 @@ const addDaily = async (date = getDate(), money = 10) => {
 
 const updateDailyByDate = async (date = getDate(), money = 10) => {
   const { client, db, collection } = await getDbConfig();
-  let ret;
-  try {
-    ret = await collection.updateOne({ 'date': date }, { $set: { 'money': money, 'date': date } });
-  } catch (error) {
-    console.error(error);
-  } finally {
-    await client.close()
-  }
-  return ret;
+  return await exec(async () => await collection.updateOne({ 'date': date }, { $set: { 'money': money, 'date': date } }));
 }
 
 const getSum = async () => {
   const { client, db, collection } = await getDbConfig();
-  let ret;
-  try {
-    ret = await collection.aggregate([
-      {
-        $group: {
-          _id: null,
-          total: { $sum: '$money' }
-        }
+  return await exec(async () => await collection.aggregate([
+    {
+      $group: {
+        _id: null,
+        total: { $sum: '$money' }
       }
-    ]).toArray();
-  } catch (error) {
-    console.error(error);
-  } finally {
-    await client.close();
-  }
-  return ret;
+    }
+  ]).toArray());
 }
 
 const getWeekSum = async () => {
   const { client, db, collection } = await getDbConfig();
-  let ret;
-  try {
-    ret = await collection.aggregate([
-      {
-        $match: {
-          "date": {
-            $gte: getWeekAgo(),
-            $lt: getChinaTime()
-          }
-        }
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: '$money' }
+  return await exec(async () => await collection.aggregate([
+    {
+      $match: {
+        "date": {
+          $gte: getWeekAgo(),
+          $lt: getChinaTime()
         }
       }
-    ]).toArray();
-  } catch (error) {
-    console.error(error);
-  } finally {
-    await client.close();
-  }
-  return ret;
+    },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: '$money' }
+      }
+    }
+  ]).toArray());
 }
 
 
