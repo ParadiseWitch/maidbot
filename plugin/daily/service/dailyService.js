@@ -100,7 +100,7 @@ const getSum = async () => {
         total: { $sum: '$money' }
       }
     }
-  ]).toArray());
+  ]).toArray()).then(res => res[0].total);
 }
 
 const getWeekSum = async () => {
@@ -120,7 +120,7 @@ const getWeekSum = async () => {
         total: { $sum: '$money' }
       }
     }
-  ]).toArray());
+  ]).toArray()).then(res => res[0].total);
 }
 
 
@@ -129,11 +129,13 @@ module.exports = {
   getLastDaily,
   addDaily,
   getDailyByDate,
-  getWeekDaily
+  getWeekDaily,
+  updateDailyByDate,
+  getWeekSum,
+  getSum,
 }
 
-const main = async () => {
-  console.log(await getWeekDaily())
-  console.log(await getWeekDaily())
-}
-main();
+// const main = async () => {
+//   console.log(await getWeekSum());
+// }
+// main();
