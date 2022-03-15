@@ -2,7 +2,7 @@ const getChinaTime = (date = new Date()) => {
   return new Date(date.getTime() + 8 * 60 * 60 * 1000)
 }
 
-const getDate = (date = new Date()) => {
+const get0ClockDate = (date = new Date()) => {
   return getChinaTime(new Date(getDateStr(date)));
 }
 
@@ -23,5 +23,5 @@ module.exports = {
   getChinaTime,
   getWeekAgo,
   getDateStr,
-  getDate
+  get0ClockDate
 }

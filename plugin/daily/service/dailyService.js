@@ -1,6 +1,6 @@
 const { MongoClient } = require('mongodb');
 const CONFIG = require('../../../config');
-const { getChinaTime, getWeekAgo, getDate } = require('../../../utils/DateUtil');
+const { getChinaTime, getWeekAgo, get0ClockDate } = require('../../../utils/DateUtil');
 
 const DB_NAME = 'todo';
 const DAILY_COLLECTION_NAME = 'daily';
@@ -66,10 +66,10 @@ const getWeekDaily = async () => {
  * @param {*} date 
  * @returns 
  */
-const addDaily = async (date = getDate(), money = 10) => {
+const addDaily = async (date = get0ClockDate(), money = 10) => {
   await connectTodoDb();
   // 查询是否已经打卡
-  const data = await getDailyByDate(getDate(date));
+  const data = await getDailyByDate(get0ClockDate(date));
   const len = data.length;
   if (len <= 0) {
     // 没有打卡, 插入数据
@@ -82,11 +82,11 @@ const addDaily = async (date = getDate(), money = 10) => {
   } else {
     // 该日期已有打卡，更新
     await client.close();
-    return await updateDailyByDate(getDate(date), 20)
+    return await updateDailyByDate(get0ClockDate(date), 20)
   }
 }
 
-const updateDailyByDate = async (date = getDate(), money = 10) => {
+const updateDailyByDate = async (date = get0ClockDate(), money = 10) => {
   await connectTodoDb();
   return await exec(async () => await dailyCol.updateOne({ 'date': date }, { $set: { 'money': money, 'date': date } }));
 }
