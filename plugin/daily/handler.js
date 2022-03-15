@@ -2,7 +2,7 @@ const { getChinaTime } = require("../../utils/DateUtil");
 const { getWeekDaily, updateDailyByDate, getDailyByDate, getWeekSum, getSum } = require("./service/dailyService");
 
 
-module.export = dailyHandlers = [
+const dailyHandlers = [
   {
     match: (data) => data.message.indexOf('帮助') !== -1 
       || data.message.indexOf('help') !== -1,
@@ -120,7 +120,6 @@ const getWeekDailyMsg = async () => {
 
 const getDailyMsgByDate = async (date) => {
   const datas = await getDailyByDate(date);
-  const datas = await getWeekDaily();
   let msg = '';
   for (const data of datas) {
     for (const k in data) {
@@ -133,3 +132,6 @@ const getDailyMsgByDate = async (date) => {
   }
   return msg;
 }
+
+
+module.exports = dailyHandlers;
