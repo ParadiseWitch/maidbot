@@ -24,6 +24,7 @@ const connectTodoDb = async () => {
 
 const exec = async (fn, ...arg) => {
   try {
+    await connectTodoDb();
     return await fn(...arg);
   } catch (error) {
     console.error(error);
@@ -35,22 +36,18 @@ const exec = async (fn, ...arg) => {
 
 
 const getAllDaily = async () => {
-  await connectTodoDb();
   return await exec(async () => await dailyCol.find({}).toArray());
 }
 
 const getDailyByDate = async (date) => {
-  await connectTodoDb();
   return await exec(async () => await dailyCol.find({ date }).toArray())
 }
 
 const getLastDaily = async () => {
-  await connectTodoDb();
   return await exec(async () => dailyCol.find({}).sort({ $natural: -1 }).limit(1).toArray());
 }
 
 const getWeekDaily = async () => {
-  await connectTodoDb();
   return await exec(async () => await dailyCol.find({
     "date": {
       $gte: getWeekAgo(),
@@ -67,9 +64,9 @@ const getWeekDaily = async () => {
  * @returns 
  */
 const addDaily = async (date = get0ClockDate(), money = 10) => {
-  await connectTodoDb();
   // 查询是否已经打卡
-  const data = await getDailyByDate(get0ClockDate(date));
+  date = get0ClockDate(date);
+  const data = await getDailyByDate(date);
   const len = data.length;
   if (len <= 0) {
     // 没有打卡, 插入数据
@@ -80,19 +77,15 @@ const addDaily = async (date = get0ClockDate(), money = 10) => {
       name: 'daily'
     }));
   } else {
-    // 该日期已有打卡，更新
-    await client.close();
-    return await updateDailyByDate(get0ClockDate(date), 20)
+    return await updateDailyByDate(date, money)
   }
 }
 
 const updateDailyByDate = async (date = get0ClockDate(), money = 10) => {
-  await connectTodoDb();
   return await exec(async () => await dailyCol.updateOne({ 'date': date }, { $set: { 'money': money, 'date': date } }));
 }
 
 const getSum = async () => {
-  await connectTodoDb();
   return await exec(async () => await dailyCol.aggregate([
     {
       $group: {
@@ -100,11 +93,11 @@ const getSum = async () => {
         total: { $sum: '$money' }
       }
     }
-  ]).toArray()).then(res => res[0].total);
+  ]).toArray()).then(res => res.alength ? res[0].total : 0);
 }
 
 const getWeekSum = async () => {
-  await connectTodoDb();
+  // FIXME 时间范围应该是本周周一到目前天的范围
   return await exec(async () => await dailyCol.aggregate([
     {
       $match: {
@@ -120,7 +113,7 @@ const getWeekSum = async () => {
         total: { $sum: '$money' }
       }
     }
-  ]).toArray()).then(res => res[0].total);
+  ]).toArray()).then(res => res.length ? res[0].total : 0);
 }
 
 
@@ -135,7 +128,7 @@ module.exports = {
   getSum,
 }
 
-// const main = async () => {
-//   console.log(await getWeekSum());
-// }
-// main();
+const main = async () => {
+  console.log(await getSum());
+}
+main();

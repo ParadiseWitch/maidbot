@@ -3,7 +3,7 @@ const getChinaTime = (date = new Date()) => {
 }
 
 const get0ClockDate = (date = new Date()) => {
-  return getChinaTime(new Date(getDateStr(date)));
+  return new Date(getDateStr(date));
 }
 
 const getWeekAgo = () => {

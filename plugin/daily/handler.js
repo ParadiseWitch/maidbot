@@ -1,12 +1,19 @@
 const { getChinaTime } = require("../../utils/DateUtil");
-const { getWeekDaily, updateDailyByDate, getDailyByDate, getWeekSum, getSum } = require("./service/dailyService");
+const {
+  getWeekDaily,
+  updateDailyByDate,
+  getDailyByDate,
+  getWeekSum,
+  getSum,
+  addDaily
+} = require("./service/dailyService");
 
 
 const dailyHandlers = [
   {
-    match: (data) => data.message.indexOf('帮助') !== -1 
+    match: (data) => data.message.indexOf('帮助') !== -1
       || data.message.indexOf('help') !== -1,
-    handle: async (data, ws, http) => { 
+    handle: async ({data, ws, http}) => {
       ws.send('send_private_msg', {
         user_id: data.sender.user_id,
         message: `
@@ -62,8 +69,13 @@ const dailyHandlers = [
         })
         return;
       }
-      let money = args[1];
-      await updateDailyByDate(date, money);
+      let money = parseInt(args[1]);
+      const oldData = await getDailyByDate(date);
+      if (oldData && oldData.length > 0){
+        await updateDailyByDate(date, money);
+      } else{
+        await addDaily(date, money);
+      }
       const msg = await getDailyMsgByDate(date);
       ws.send('send_private_msg', {
         user_id: data.sender.user_id,
@@ -94,7 +106,7 @@ const dailyHandlers = [
     match: (data) => data.message.indexOf('余额') !== -1
       || data.message.indexOf('盈亏') !== -1,
     handle: async ({ data, ws, http }) => {
-      const sum = await getSum();
+      const msg = await getSum();
       ws.send('send_private_msg', {
         user_id: data.sender.user_id,
         message: `全部盈亏：${msg}`
