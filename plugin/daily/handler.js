@@ -1,5 +1,4 @@
 const {
-  getChinaTime,
   getDateStr,
 } = require("../../utils/DateUtil");
 const {
@@ -36,14 +35,14 @@ const dailyHandlers = [
       const { exist } = await addDaily();
       ws.send('send_private_msg', {
         user_id: data.sender.user_id,
-        message: (exist ? '今日已打卡\n' : '打卡成功\n') + await getWeekDailyMsg()
+        message: (exist ? '今日已打卡\n' : '打卡成功\n') + dailyDataArr2Msg(await getWeekDaily())
       })
     }
   },
   {
     match: (data) => data.message.indexOf('周') !== -1,
     handle: async ({ data, ws, http }) => {
-      const weeklyMsg = await getWeekDailyMsg();
+      const weeklyMsg = dailyDataArr2Msg(await getWeekDaily());
       const weeklySumMsg = `本周盈亏：${await getWeekSum()}`;
       ws.send('send_private_msg', {
         user_id: data.sender.user_id,
@@ -64,7 +63,7 @@ const dailyHandlers = [
       }
       let date;
       try {
-        date = getChinaTime(new Date(args[0]));
+        date = new Date(args[0]);
       } catch (error) {
         ws.send('send_private_msg', {
           user_id: data.sender.user_id,
@@ -73,13 +72,13 @@ const dailyHandlers = [
         return;
       }
       let money = parseInt(args[1]);
-      const oldData = await getDailyByDate(date);
-      if (oldData && oldData.length > 0) {
+      const oldDataArr = await getDailyByDate(date);
+      if (oldDataArr && oldDataArr.length > 0) {
         await updateDailyByDate(date, money);
       } else {
         await addDaily(date, money);
       }
-      const msg = await getDailyMsgByDate(date);
+      const msg = dailyDataArr2Msg(oldDataArr);
       ws.send('send_private_msg', {
         user_id: data.sender.user_id,
         message: `更新成功！\n${msg}`
@@ -98,7 +97,7 @@ const dailyHandlers = [
         return;
       }
       const date = args[0];
-      const msg = await getDailyMsgByDate(date);
+      const msg = dailyDataArr2Msg(await getDailyByDate(date));
       ws.send('send_private_msg', {
         user_id: data.sender.user_id,
         message: `${msg}`
@@ -118,17 +117,6 @@ const dailyHandlers = [
   }
 ]
 
-const getWeekDailyMsg = async () => {
-  const datas = await getWeekDaily();
-  let msg = '';
-  for (const data of datas) {
-    const { date, money, name } = data;
-    msg += getDateStr(date) + '\t'
-    msg += name + '\t';
-    msg += money + '\n';
-  }
-  return msg;
-}
 
 const getDailyMsgByDate = async (dateStr) => {
   const date = new Date(dateStr);
@@ -143,5 +131,19 @@ const getDailyMsgByDate = async (dateStr) => {
   return msg;
 }
 
+/**
+ * 将daily数组数据转为消息
+ * @param {[]} datas 
+ */
+const dailyDataArr2Msg = (dataArr) => {
+  let msg = '';
+  for (const data of dataArr) {
+    const { date, money, name } = data;
+    msg += getDateStr(date) + '\t'
+    msg += name + '\t';
+    msg += money + '\n';
+  }
+  return msg;
+}
 
 module.exports = dailyHandlers;
