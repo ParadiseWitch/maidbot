@@ -1,4 +1,7 @@
-const { getChinaTime } = require("../../utils/DateUtil");
+const {
+  getChinaTime,
+  getDateStr,
+} = require("../../utils/DateUtil");
 const {
   getWeekDaily,
   updateDailyByDate,
@@ -13,7 +16,7 @@ const dailyHandlers = [
   {
     match: (data) => data.message.indexOf('帮助') !== -1
       || data.message.indexOf('help') !== -1,
-    handle: async ({data, ws, http}) => {
+    handle: async ({ data, ws, http }) => {
       ws.send('send_private_msg', {
         user_id: data.sender.user_id,
         message: `
@@ -30,10 +33,10 @@ const dailyHandlers = [
   {
     match: (data) => data.message === '打卡',
     handle: async ({ data, ws, http }) => {
-      await addDaily();
+      const { exist } = await addDaily();
       ws.send('send_private_msg', {
         user_id: data.sender.user_id,
-        message: '打卡成功\n' + await getWeekDailyMsg()
+        message: (exist ? '今日已打卡\n' : '打卡成功\n') + await getWeekDailyMsg()
       })
     }
   },
@@ -71,9 +74,9 @@ const dailyHandlers = [
       }
       let money = parseInt(args[1]);
       const oldData = await getDailyByDate(date);
-      if (oldData && oldData.length > 0){
+      if (oldData && oldData.length > 0) {
         await updateDailyByDate(date, money);
-      } else{
+      } else {
         await addDaily(date, money);
       }
       const msg = await getDailyMsgByDate(date);
@@ -94,7 +97,7 @@ const dailyHandlers = [
         })
         return;
       }
-      await updateDailyByDate(date, money);
+      const date = args[0];
       const msg = await getDailyMsgByDate(date);
       ws.send('send_private_msg', {
         user_id: data.sender.user_id,
@@ -119,28 +122,23 @@ const getWeekDailyMsg = async () => {
   const datas = await getWeekDaily();
   let msg = '';
   for (const data of datas) {
-    for (const k in data) {
-      if (Object.hasOwnProperty.call(data, k)) {
-        const v = data[k];
-        msg += `${v}\t`;
-      }
-    }
-    msg += '\n';
+    const { date, money, name } = data;
+    msg += getDateStr(date) + '\t'
+    msg += name + '\t';
+    msg += money + '\n';
   }
   return msg;
 }
 
-const getDailyMsgByDate = async (date) => {
+const getDailyMsgByDate = async (dateStr) => {
+  const date = new Date(dateStr);
   const datas = await getDailyByDate(date);
   let msg = '';
   for (const data of datas) {
-    for (const k in data) {
-      if (Object.hasOwnProperty.call(data, k)) {
-        const v = data[k];
-        msg += `${v}\t`;
-      }
-    }
-    msg += '\n';
+    const { date, money, name } = data;
+    msg += getDateStr(date) + '\t'
+    msg += name + '\t';
+    msg += money + '\n';
   }
   return msg;
 }

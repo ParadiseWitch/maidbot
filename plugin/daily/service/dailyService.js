@@ -61,23 +61,23 @@ const getWeekDaily = async () => {
  * 添加打卡
  * @param {*} money 
  * @param {*} date 
- * @returns 
+ * @returns {Promise<{exist, data}>} promise
  */
 const addDaily = async (date = get0ClockDate(), money = 10) => {
   // 查询是否已经打卡
   date = get0ClockDate(date);
   const data = await getDailyByDate(date);
-  const len = data.length;
-  if (len <= 0) {
+  if (!data || data.length <= 0) {
     // 没有打卡, 插入数据
-    return exec(async () => await dailyCol.insertOne({
+    const ret = await exec(async () => await dailyCol.insertOne({
       date: date,
       money: money,
       user: 'xj',
       name: 'daily'
     }));
+    return Promise.resolve({ exist: true, data: ret })
   } else {
-    return await updateDailyByDate(date, money)
+    return Promise.resolve({ exist: true, data: null })
   }
 }
 
@@ -128,7 +128,7 @@ module.exports = {
   getSum,
 }
 
-const main = async () => {
-  console.log(await getSum());
-}
-main();
+// const main = async () => {
+//   console.log(await getSum());
+// }
+// main();
