@@ -16,7 +16,7 @@ module.exports = {
   },
   db: {
     mongo: {
-      url: "mongodb://admin:123456@localhost:27017"
+      url: "mongodb://localhost:3344"
     }
   }
 }
