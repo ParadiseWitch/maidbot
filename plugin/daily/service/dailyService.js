@@ -75,7 +75,7 @@ const addDaily = async (date = get0ClockDate(), money = 10) => {
       user: 'xj',
       name: 'daily'
     }));
-    return Promise.resolve({ exist: true, data: ret })
+    return Promise.resolve({ exist: false, data: ret })
   } else {
     return Promise.resolve({ exist: true, data: null })
   }
@@ -93,7 +93,7 @@ const getSum = async () => {
         total: { $sum: '$money' }
       }
     }
-  ]).toArray()).then(res => res.alength ? res[0].total : 0);
+  ]).toArray()).then(res => res.length ? res[0].total : 0);
 }
 
 const getWeekSum = async () => {
@@ -129,6 +129,7 @@ module.exports = {
 }
 
 // const main = async () => {
-//   console.log(await getSum());
+  
+//   console.log(await getDailyByDate(get0ClockDate(new Date())));
 // }
 // main();

@@ -11,6 +11,14 @@ const {
 } = require("./service/dailyService");
 
 
+const help_msg = `打卡命令：
+\t打卡
+\t打卡周榜
+\t更新打卡 [日期] [金额]
+\t查询打卡 [日期]
+\t打卡盈亏
+`
+
 const dailyHandlers = [
   {
     match: (data) => data.message.indexOf('帮助') !== -1
@@ -18,14 +26,7 @@ const dailyHandlers = [
     handle: async ({ data, ws, http }) => {
       ws.send('send_private_msg', {
         user_id: data.sender.user_id,
-        message: `
-        打卡命令：
-          \t打卡
-          \t打卡周榜
-          \t更新打卡 [日期] [金额]
-          \t查询打卡 [日期]
-          \t打卡盈亏
-        `
+        message: help_msg
       })
     }
   },
@@ -73,15 +74,17 @@ const dailyHandlers = [
       }
       let money = parseInt(args[1]);
       const oldDataArr = await getDailyByDate(date);
+      let isUpdate = true;
       if (oldDataArr && oldDataArr.length > 0) {
         await updateDailyByDate(date, money);
       } else {
+        isUpdate = false;
         await addDaily(date, money);
       }
-      const msg = dailyDataArr2Msg(oldDataArr);
+      const msg = dailyDataArr2Msg(await getDailyByDate(date));
       ws.send('send_private_msg', {
         user_id: data.sender.user_id,
-        message: `更新成功！\n${msg}`
+        message: `${isUpdate ? '更新成功！' : '插入成功'}\n${msg}`
       })
     }
   },
@@ -97,10 +100,10 @@ const dailyHandlers = [
         return;
       }
       const date = args[0];
-      const msg = dailyDataArr2Msg(await getDailyByDate(date));
+      const msg = dailyDataArr2Msg(await getDailyByDate(new Date(date)));
       ws.send('send_private_msg', {
         user_id: data.sender.user_id,
-        message: `${msg}`
+        message: `${(msg && msg.length > 0) ? msg : '无打卡数据'}`
       })
     }
   },
@@ -117,26 +120,13 @@ const dailyHandlers = [
   }
 ]
 
-
-const getDailyMsgByDate = async (dateStr) => {
-  const date = new Date(dateStr);
-  const datas = await getDailyByDate(date);
-  let msg = '';
-  for (const data of datas) {
-    const { date, money, name } = data;
-    msg += getDateStr(date) + '\t'
-    msg += name + '\t';
-    msg += money + '\n';
-  }
-  return msg;
-}
-
 /**
  * 将daily数组数据转为消息
  * @param {[]} datas 
  */
 const dailyDataArr2Msg = (dataArr) => {
   let msg = '';
+  dataArr.sort((a, b) => a.date - b.date)
   for (const data of dataArr) {
     const { date, money, name } = data;
     msg += getDateStr(date) + '\t'
@@ -147,3 +137,9 @@ const dailyDataArr2Msg = (dataArr) => {
 }
 
 module.exports = dailyHandlers;
+
+// const main = async() => { 
+//   const str = dailyDataArr2Msg(await getWeekDaily())
+//   console.log(str);
+// }
+// main();
