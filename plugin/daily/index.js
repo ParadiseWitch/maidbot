@@ -1,4 +1,3 @@
-const { addDaily, getWeekDaily } = require("./service/dailyService");
 const dailyHandlers = require("./handler.js");
 
 module.exports = opts => {
