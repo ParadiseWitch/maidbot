@@ -10,7 +10,8 @@ module.exports = {
       // todo ？
       // 
     },
-    sPlugins:{
+    sPlugins: {
+      // './plugin/report': {},
       // 定时任务 注册一次
     },
   },
@@ -18,5 +19,8 @@ module.exports = {
     mongo: {
       url: "mongodb://localhost:3344"
     }
-  }
+  },
+  admin: [
+    1374624878,
+  ]
 }

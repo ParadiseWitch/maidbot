@@ -1,6 +1,6 @@
 const { MongoClient } = require('mongodb');
 const CONFIG = require('../../../config');
-const { now, getThisWeekMonday, get0ClockDate } = require('../../../utils/DateUtil');
+const { now, getThisWeekMonday, get0ClockDate, getDateStr } = require('../../../utils/DateUtil');
 
 const DB_NAME = 'todo';
 const DAILY_COLLECTION_NAME = 'daily';
@@ -35,20 +35,21 @@ const exec = async (fn, ...arg) => {
 }
 
 
-const getAllDaily = async () => {
-  return await exec(async () => await dailyCol.find({}).toArray());
+const getAllDaily = async (uid) => {
+  return await exec(async () => await dailyCol.find({user: uid}).toArray());
 }
 
-const getDailyByDate = async (date) => {
-  return await exec(async () => await dailyCol.find({ date }).toArray())
+const getDailyByDate = async (uid, date) => {
+  return await exec(async () => await dailyCol.find({ user: uid, date }).toArray())
 }
 
-const getLastDaily = async () => {
-  return await exec(async () => dailyCol.find({}).sort({ $natural: -1 }).limit(1).toArray());
+const getLastDaily = async (uid) => {
+  return await exec(async () => dailyCol.find({user: uid}).sort({ $natural: -1 }).limit(1).toArray());
 }
 
-const getWeekDaily = async () => {
+const getWeekDailies = async (uid) => {
   return await exec(async () => await dailyCol.find({
+    "user": uid,
     "date": {
       $gte: getThisWeekMonday(),
       $lt: now()
@@ -59,20 +60,21 @@ const getWeekDaily = async () => {
 
 /**
  * 添加打卡
- * @param {*} money 
- * @param {*} date 
+ * @param {number} uid
+ * @param {Date} date 
+ * @param {number} money 
  * @returns {Promise<{exist, data}>} promise
  */
-const addDaily = async (date = get0ClockDate(), money = 10) => {
+const addDaily = async (uid, date = get0ClockDate(), money = 10) => {
   // 查询是否已经打卡
   date = get0ClockDate(date);
-  const data = await getDailyByDate(date);
+  const data = await getDailyByDate(uid, date);
   if (!data || data.length <= 0) {
     // 没有打卡, 插入数据
     const ret = await exec(async () => await dailyCol.insertOne({
       date: date,
       money: money,
-      user: 'xj',
+      user: uid,
       name: 'daily'
     }));
     return Promise.resolve({ exist: false, data: ret })
@@ -81,27 +83,29 @@ const addDaily = async (date = get0ClockDate(), money = 10) => {
   }
 }
 
-const updateDailyByDate = async (date = get0ClockDate(), money = 10) => {
-  return await exec(async () => await dailyCol.updateOne({ 'date': date }, { $set: { 'money': money, 'date': date } }));
+const updateDailyByDate = async (uid, date = get0ClockDate(), money = 10) => {
+  return await exec(async () => await dailyCol.updateOne({ 
+    'user': uid,
+    'date': date 
+  }, { 
+    $set: { 
+      'money': money, 
+      'date': date 
+    } 
+  }));
 }
 
-const getSum = async () => {
-  return await exec(async () => await dailyCol.aggregate([
-    {
-      $group: {
-        _id: null,
-        total: { $sum: '$money' }
-      }
-    }
-  ]).toArray()).then(res => res.length ? res[0].total : 0);
-}
-
-const getWeekSum = async () => {
-  // FIXME 时间范围应该是本周周一到目前天的范围
+/**
+ * 获取本周的收益和
+ * @param {*} uid 
+ * @returns 
+ */
+const getWeekDailySum = async (uid) => {
   return await exec(async () => await dailyCol.aggregate([
     {
       $match: {
-        "date": {
+        user: uid,
+        date: {
           $gte: getThisWeekMonday(),
           $lt: now()
         }
@@ -116,16 +120,52 @@ const getWeekSum = async () => {
   ]).toArray()).then(res => res.length ? res[0].total : 0);
 }
 
+/**
+ * 获取总共的收益和
+ */
+
+const getDailySum = async (uid) => {
+  return await exec(async () => await dailyCol.aggregate([
+    { $match: { user: uid } },
+    {
+      $group: {
+        _id: null,
+        total: { $sum: '$money' }
+      }
+    }
+  ]).toArray()).then(res => res.length ? res[0].total : 0);
+}
+
+
+
+
+/**
+ * 将daily数组数据转为消息
+ * @param {[]} datas 
+ */
+const dailyDataArr2Msg = (dataArr) => {
+  let msg = '';
+  dataArr.sort((a, b) => a.date - b.date)
+  for (const data of dataArr) {
+    const { date, money, name } = data;
+    msg += getDateStr(date) + '\t'
+    msg += name + '\t';
+    msg += money + '\n';
+  }
+  return msg;
+}
+
 
 module.exports = {
   getAllDaily,
   getLastDaily,
   addDaily,
   getDailyByDate,
-  getWeekDaily,
+  getWeekDailies,
   updateDailyByDate,
-  getWeekSum,
-  getSum,
+  getWeekDailySum,
+  getDailySum,
+  dailyDataArr2Msg,
 }
 
 // const main = async () => {
