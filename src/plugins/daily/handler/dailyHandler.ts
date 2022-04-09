@@ -1,40 +1,36 @@
-const {
-  getDateStr,
-} = require("../../utils/DateUtil");
-const {
-  getWeekDailies,
-  updateDailyByDate,
-  getDailyByDate,
-  getWeekDailySum,
-  getDailySum,
-  addDaily,
-  dailyDataArr2Msg,
-} = require("./service/dailyService");
-const { isAdmin } = require("../../utils/AppUtil")
+import { getWeekDailies, updateDailyByDate, getDailyByDate, getWeekDailySum, getDailySum, addDaily, dailyDataArr2Msg } from "../service/DailyService";
+import { isAdmin } from "../../../utils/AppUtil";
+import { Handler } from "../../../botPlugin/type";
 
-const dailyHandlers = [
+export const dailyHandlers: Handler[] = [
   {
+    name: "help",
     match: (data) => data.message.indexOf('帮助') !== -1
       || data.message.indexOf('help') !== -1,
     handle: sendHelpMsg
   },
   {
+    name: "add",
     match: (data) => data.message === '打卡',
     handle: dailyAndSendWeekDailies
   },
   {
+    name: "query_week",
     match: (data) => data.message.indexOf('周') !== -1,
     handle: sendWeekDailies
   },
   {
+    name: "update",
     match: (data) => data.message.indexOf('更新') !== -1 || data.message.indexOf('修改') !== -1,
     handle: updateDaily
   },
   {
+    name: "query_day",
     match: (data) => data.message.indexOf('查询') !== -1,
     handle: queryDaily
   },
   {
+    name: "query_balance",
     match: (data) => data.message.indexOf('余额') !== -1
       || data.message.indexOf('盈亏') !== -1,
     handle: queryDailySumMoney
@@ -50,7 +46,7 @@ function getHelpMsg(uid) {
   return `打卡命令：
   \t打卡
   \t打卡周榜
-  ${isAdmin(uid) ? '\t更新打卡 [日期] [金额]' : ''}
+  ${isAdmin(uid) ? '\t更新打卡 [用户QQ] [日期] [金额]' : ''}
   \t查询打卡 [日期]
   \t打卡盈亏
   `
@@ -99,13 +95,14 @@ async function sendWeekDailies({ data, ws, http }) {
 /**
  * 提取更新命令的参数并验证
  * @param {[]} args 
- * @returns 
+ * @throws
+ * @return
  */
-function extractUpdateArgsAndVaild(args) {
+function extractUpdateArgsAndVaild(args: any[]) {
   if (args.length !== 3) {
     throw new Error('参数格式错误, 格式: 更新打卡 [用户QQ] [日期] [金额]')
   }
-  let date;
+  let date: Date;
   try {
     date = new Date(args[1]);
   } catch (error) {
@@ -131,7 +128,7 @@ async function updateDaily({ data, ws, http }) {
     });
     return;
   }
-  let uid, date, money;
+  let uid: number, date: Date, money: number;
   try {
     ({ uid, date, money } = extractUpdateArgsAndVaild(args));
   } catch (e) {
@@ -139,6 +136,7 @@ async function updateDaily({ data, ws, http }) {
       user_id: sendUid,
       message: e.message
     });
+    return;
   }
   const oldDataArr = await getDailyByDate(uid, date);
   let isUpdate = true;
@@ -191,10 +189,3 @@ async function queryDailySumMoney({ data, ws, http }) {
   });
 };
 
-module.exports = dailyHandlers;
-
-// const main = async() => {
-  //   const str = dailyDataArr2Msg(await getWeekDailies())
-//   console.log(str);
-// }
-// main();

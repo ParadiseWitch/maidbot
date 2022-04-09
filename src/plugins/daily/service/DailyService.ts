@@ -1,6 +1,6 @@
-const { MongoClient } = require('mongodb');
-const CONFIG = require('../../../config');
-const { now, getThisWeekMonday, get0ClockDate, getDateStr } = require('../../../utils/DateUtil');
+import { MongoClient } from 'mongodb';
+import CONFIG from '../../../../config';
+import { now, getThisWeekMonday, get0ClockDate, getDateStr } from '../../../utils/DateUtil';
 
 const DB_NAME = 'todo';
 const DAILY_COLLECTION_NAME = 'daily';
@@ -8,7 +8,7 @@ let client = null;
 let db = null;
 let dailyCol = null;
 
-const connectTodoDb = async () => {
+export const connectTodoDb = async () => {
   try {
     if (!client || !db || !dailyCol) {
       client = new MongoClient(CONFIG.db.mongo.url)
@@ -22,7 +22,7 @@ const connectTodoDb = async () => {
   }
 }
 
-const exec = async (fn, ...arg) => {
+export const exec = async (fn, ...arg) => {
   try {
     await connectTodoDb();
     return await fn(...arg);
@@ -35,19 +35,19 @@ const exec = async (fn, ...arg) => {
 }
 
 
-const getAllDaily = async (uid) => {
+export const getAllDaily = async (uid: number) => {
   return await exec(async () => await dailyCol.find({user: uid}).toArray());
 }
 
-const getDailyByDate = async (uid, date) => {
+export const getDailyByDate = async (uid: number, date: Date) => {
   return await exec(async () => await dailyCol.find({ user: uid, date }).toArray())
 }
 
-const getLastDaily = async (uid) => {
+export const getLastDaily = async (uid: number) => {
   return await exec(async () => dailyCol.find({user: uid}).sort({ $natural: -1 }).limit(1).toArray());
 }
 
-const getWeekDailies = async (uid) => {
+export const getWeekDailies = async (uid: number) => {
   return await exec(async () => await dailyCol.find({
     "user": uid,
     "date": {
@@ -65,7 +65,7 @@ const getWeekDailies = async (uid) => {
  * @param {number} money 
  * @returns {Promise<{exist, data}>} promise
  */
-const addDaily = async (uid, date = get0ClockDate(), money = 10) => {
+export const addDaily = async (uid: number, date: Date = get0ClockDate(), money: number = 10) => {
   // 查询是否已经打卡
   date = get0ClockDate(date);
   const data = await getDailyByDate(uid, date);
@@ -83,7 +83,7 @@ const addDaily = async (uid, date = get0ClockDate(), money = 10) => {
   }
 }
 
-const updateDailyByDate = async (uid, date = get0ClockDate(), money = 10) => {
+export const updateDailyByDate = async (uid: number, date: Date = get0ClockDate(), money: number = 10) => {
   return await exec(async () => await dailyCol.updateOne({ 
     'user': uid,
     'date': date 
@@ -100,7 +100,7 @@ const updateDailyByDate = async (uid, date = get0ClockDate(), money = 10) => {
  * @param {*} uid 
  * @returns 
  */
-const getWeekDailySum = async (uid) => {
+export const getWeekDailySum = async (uid: number) => {
   return await exec(async () => await dailyCol.aggregate([
     {
       $match: {
@@ -124,7 +124,7 @@ const getWeekDailySum = async (uid) => {
  * 获取总共的收益和
  */
 
-const getDailySum = async (uid) => {
+export const getDailySum = async (uid: number) => {
   return await exec(async () => await dailyCol.aggregate([
     { $match: { user: uid } },
     {
@@ -141,9 +141,9 @@ const getDailySum = async (uid) => {
 
 /**
  * 将daily数组数据转为消息
- * @param {[]} datas 
+ * @param {[]} dataArr
  */
-const dailyDataArr2Msg = (dataArr) => {
+export const dailyDataArr2Msg = (dataArr: any[]) => {
   let msg = '';
   dataArr.sort((a, b) => a.date - b.date)
   for (const data of dataArr) {
@@ -154,22 +154,3 @@ const dailyDataArr2Msg = (dataArr) => {
   }
   return msg;
 }
-
-
-module.exports = {
-  getAllDaily,
-  getLastDaily,
-  addDaily,
-  getDailyByDate,
-  getWeekDailies,
-  updateDailyByDate,
-  getWeekDailySum,
-  getDailySum,
-  dailyDataArr2Msg,
-}
-
-// const main = async () => {
-  
-//   console.log(await getDailyByDate(get0ClockDate(new Date())));
-// }
-// main();
