@@ -3,7 +3,7 @@ import { BotPlugin } from "../../botPlugin";
 import { BotPluginType } from "../../botPlugin/BotPlugin";
 import PluginExecParam, { Handler } from "../../botPlugin/type";
 import { MsgEventData } from "../../type/EventData";
-import { dailyHandlers } from "./handler/dailyHandler";
+import { dailyHandlers } from "./handler";
 
 
 const dailyPlugin = new BotPlugin('daily', BotPluginType.reply, true, {});
