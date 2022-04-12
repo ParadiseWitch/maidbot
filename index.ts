@@ -1,3 +1,3 @@
-import bootstart from "./src";
+import bootstrap from "./src";
 
-bootstart();
+bootstrap();

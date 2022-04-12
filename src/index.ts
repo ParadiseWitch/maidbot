@@ -3,7 +3,7 @@ import { BotPlugin, BotPluginType } from './botPlugin/BotPlugin';
 import { ws, http } from './bot';
 import { botPluginRegister } from './botPlugin/botPluginRegister';
 
-const bootstart = async () => {
+const bootstrap = async () => {
   await botPluginRegister();
 
   const replyPlugins = BotPluginManager.botPlugins.filter(p => p.type === BotPluginType.reply);
@@ -25,4 +25,4 @@ const bootstart = async () => {
     p.handle({ ws, http })
   })
 }
-export default bootstart;
+export default bootstrap;
